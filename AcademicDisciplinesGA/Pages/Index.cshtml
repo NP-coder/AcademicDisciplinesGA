@@ -1,0 +1,44 @@
+﻿@page
+@using AcademicDisciplinesGA.GA
+@using AcademicDisciplinesGA.Models
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="p-5 mb-4 bg-body-tertiary rounded-3 home-jumbotron" >
+    <div class="container-fluid py-5 text-light">
+        <h1 class="display-5 fw-bold">Розшир свій горизонт з вибірковими дисциплінами!</h1>
+        <p class="col-md-8 fw-bold fs-5">
+            Досліджуй нові галузі, розвивайся в цікавих напрямах та збагачуй свій освітній досвід з вибірковими дисциплінами. 
+            Відкрий для себе нові можливості і стань експертом у обраних областях.
+        </p>
+        @*<button class="btn btn-primary btn-lg" type="button">Example button</button>*@
+    </div>
+ </div>
+
+<div class="row align-items-md-stretch">
+    <div class="col-md-6">
+        <div class="h-100 p-5 bg-dark text-light rounded-3">
+            <h2>Персоналізуй свою освіту з вибірковими дисциплінами!</h2>
+            <p>
+                Забудь про універсальність та самостійно обирай дисципліни, що найкраще відповідають твоїм інтересам і кар'єрним цілям.
+                Вибіркові курси дозволять тобі налаштувати навчання для власних потреб та досягти бажаних результатів.
+            </p>
+            <a asp-area="User" asp-controller="GeneticAlgorithm" asp-action="Survey" class="btn btn-outline-light">Почати зараз</a>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="h-100 p-5 bg-body-tertiary border rounded-3">
+            <h2>Розкрий свій потенціал з вибірковими дисциплінами!</h2>
+            <p>
+                Вибіркові дисципліни дають можливість розвинути особисті таланти.
+                Відкрий для себе нові горизонти з широким спектром вибіркових курсів і розкрий свій справжній потенціал у навчанні та кар'єрному рості.
+            </p>
+            <a asp-area="User" asp-controller="GeneticAlgorithm" asp-action="Survey" class="btn btn-outline-secondary">Почати зараз</a>
+        </div>
+    </div>
+</div>
+
+
+

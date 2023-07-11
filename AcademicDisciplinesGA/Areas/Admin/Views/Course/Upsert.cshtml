@@ -1,0 +1,52 @@
+﻿@model AcademicDisciplinesGA.Areas.Admin.Models.CourseVM
+
+<form method="post" asp-action="Upsert">
+    <input asp-for="Course.Id" hidden />
+    <div class="border p-3 mt-4">
+        <div class="row pb-2">
+            <h2 class="text-primary">@(Model.Course.Id!=0?"Update": "Create") Course</h2>
+            <hr />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Course.Title">Title</label>
+            <input asp-for="Course.Title" class="form-control" />
+            <span asp-validation-for="Course.Title" class="text-danger"></span>
+        </div>
+         <div class="mb-3">
+            <label asp-for="Course.ECTS">ECTS</label>
+            <input asp-for="Course.ECTS" class="form-control" />
+            <span asp-validation-for="Course.ECTS" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Course.ChairId"></label>
+            <select asp-for="Course.ChairId" asp-items="@Model.ChairList" class="form-select">
+                <option disabled selected>--Select Chair--</option>
+            </select>
+            <span asp-validation-for="Course.ChairId" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Course.TeacherId"></label>
+            <select asp-for="Course.TeacherId" asp-items="@Model.TeacherList" class="form-select">
+                <option disabled selected>--Select Teacher--</option>
+            </select>
+            <span asp-validation-for="Course.TeacherId" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            @if (Model.Course.Id != 0)
+            {
+                <button type="submit" class="btn btn-primary" style="width: 150px">Update</button>
+            }
+            else
+            {
+                 <button type="submit" class="btn btn-primary" style="width: 150px">Create</button>
+            }
+            <a asp-controller="Course" asp-action="Index" class="btn btn-secondary" style="width: 150px">Back</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts{
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
+}

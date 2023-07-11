@@ -1,0 +1,52 @@
+﻿@using AcademicDisciplinesGA.GA
+@model IEnumerable<AcademicDisciplinesGA.Models.Course>
+
+<div class="container p-3">
+    <div class="row pt-4">
+        <div class="col-6">
+            <h2 class="text-primary">Пул вибіркових дисциплін</h2>
+        </div>
+    </div>
+    <br />
+
+    <table class="table table-info table-bordered table-striped">
+        <thead class="text-center">
+            <tr>
+                <th>
+                    Title
+                </th>
+                <th>
+                    ECTS
+                </th>
+                 <th>
+                    Chair
+                </th>
+                 <th>
+                    Teacher
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if(ViewData["Courses"] is List<Course> chromosome)
+            {
+                @foreach (var item in chromosome) {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Title)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.ECTS)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Chair.Title)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Teacher.Name)
+                        </td>
+                    </tr>
+                }
+            }
+            
+        </tbody>
+    </table>
+</div>
