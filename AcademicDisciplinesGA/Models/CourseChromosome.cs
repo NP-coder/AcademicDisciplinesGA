@@ -7,5 +7,9 @@
         public int ECTS { get; set; }
         public int ChairId { get; set; }
         public int TeacherId { get; set; }
+        public List<Competence> RequiredCompetences { get; set; }
+        public List<int> Prerequisites { get; set; }
+        public int Year { get; set; }
+        public int Semester { get; set; }
     }
 }

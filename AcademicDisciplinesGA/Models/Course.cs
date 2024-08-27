@@ -13,6 +13,7 @@ namespace AcademicDisciplinesGA.Models
         public int ChairId { get; set; }
         [ValidateNever]
         public Chair Chair { get; set; }
-
+        public List<CourseCompetence> Competences { get; set; }
+        public List<CoursePrerequisite> Prerequisites { get; set; }
     }
 }

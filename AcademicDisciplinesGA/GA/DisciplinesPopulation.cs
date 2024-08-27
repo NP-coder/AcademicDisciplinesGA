@@ -9,6 +9,7 @@ namespace AcademicDisciplinesGA.GA
         public List<DisciplinesChromosome> Population { get; set; }
         public List<Teacher> Teachers { get; set; }
         public List<Chair> Chairs { get; set; }
+        public List<Competence> Competences { get; set; }
         public int GenerationCount { get; set; } = 0;
         public List<int> FitnessOverTime { get; private set; }
         public int NoImprovementCount { get; private set; } = 0;
@@ -18,18 +19,19 @@ namespace AcademicDisciplinesGA.GA
 
         private float previousConvergenceArea = float.MaxValue;
 
-        public DisciplinesPopulation(ApplicationDbContext dbContext, List<Teacher> teachers, List<Chair> chairs)
+        public DisciplinesPopulation(ApplicationDbContext dbContext, List<Teacher> teachers, List<Chair> chairs, List<Competence> competences)
         {
             _dataContext = dbContext;
             Teachers = teachers;
             Chairs = chairs;
+            Competences = competences;
             FitnessOverTime = new List<int>();
             Spawn();
         }
 
         public void Spawn()
         {
-            var result = PopulationHelper.SpawnPopulation(_dataContext, Teachers, Chairs);
+            var result = PopulationHelper.SpawnPopulation(_dataContext, Teachers, Chairs, Competences);
             Population = result;
         }
 

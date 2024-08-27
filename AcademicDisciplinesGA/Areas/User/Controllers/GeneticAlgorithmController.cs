@@ -67,7 +67,7 @@ namespace AcademicDisciplinesGA.Areas.User.Controllers
                     chairs.Add(chairRec);
                 }
 
-                population = new DisciplinesPopulation(_context, teachers, chairs);
+                //population = new DisciplinesPopulation(_context, teachers, chairs);
 
                 disciplinesChromosomes = Run();
 

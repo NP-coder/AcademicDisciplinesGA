@@ -8,16 +8,39 @@ namespace AcademicDisciplinesGA.Helpers
     {
         private static Random random = new Random();
 
-        public static List<DisciplinesChromosome> SpawnPopulation(ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs)
+        //public static List<DisciplinesChromosome> SpawnPopulation(ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs)
+        //{
+        //    var population = new HashSet<DisciplinesChromosome>();
+
+        //    int remainingCount = GAConfig.PopulationCount;
+
+        //    while (remainingCount > 0)
+        //    {
+        //        var individuals = Enumerable.Range(0, remainingCount)
+        //                                    .Select(i => new DisciplinesChromosome(dataContext, teachers, chairs))
+        //                                    .ToList();
+
+        //        foreach (var individual in individuals)
+        //        {
+        //            population.Add(individual);
+        //        }
+
+        //        remainingCount = GAConfig.PopulationCount - population.Count;
+        //    }
+
+        //    return population.ToList();
+        //}
+
+        public static List<DisciplinesChromosome> SpawnPopulation(
+            ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs, List<Competence> competences)
         {
             var population = new HashSet<DisciplinesChromosome>();
 
             int remainingCount = GAConfig.PopulationCount;
-
             while (remainingCount > 0)
             {
                 var individuals = Enumerable.Range(0, remainingCount)
-                                            .Select(i => new DisciplinesChromosome(dataContext, teachers, chairs))
+                                            .Select(i => new DisciplinesChromosome(dataContext, teachers, chairs, competences))
                                             .ToList();
 
                 foreach (var individual in individuals)
@@ -27,7 +50,6 @@ namespace AcademicDisciplinesGA.Helpers
 
                 remainingCount = GAConfig.PopulationCount - population.Count;
             }
-
             return population.ToList();
         }
 

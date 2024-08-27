@@ -15,5 +15,6 @@ namespace AcademicDisciplinesGA.Models
         [ForeignKey("ChairId")]
         [ValidateNever]
         public Chair Chair { get; set; }
+        public List<Competence> Competences { get; set; }
     }
 }

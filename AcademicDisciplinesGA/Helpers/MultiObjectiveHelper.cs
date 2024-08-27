@@ -8,9 +8,10 @@ namespace AcademicDisciplinesGA.Helpers
         {
             foreach (var individual in population)
             {
+                individual.RecalculateCompetenceFitness(); // Запуск оновлення фітнесу за компетентностями
+                individual.LoadFitness = individual.CalculateLoadDistribution();
                 individual.Rank = -1;
             }
-
             CalculateRank(population);
         }
 
@@ -73,14 +74,10 @@ namespace AcademicDisciplinesGA.Helpers
 
         public static bool Dominates(DisciplinesChromosome a, DisciplinesChromosome b)
         {
-            if (a.ECTSCount == 60 &&
-                a.TeacherFitness > b.TeacherFitness &&
-                a.ChairFitness > b.ChairFitness)
-            {
-                return true;
-            }
+            bool betterOrEqualOnAll = a.TeacherFitness >= b.TeacherFitness && a.ChairFitness >= b.ChairFitness && a.CompetenceFitness >= b.CompetenceFitness && a.LoadFitness >= b.LoadFitness;
+            bool betterOnAtLeastOne = a.TeacherFitness > b.TeacherFitness || a.ChairFitness > b.ChairFitness || a.CompetenceFitness > b.CompetenceFitness || a.LoadFitness > b.LoadFitness;
 
-            return false;
+            return betterOrEqualOnAll && betterOnAtLeastOne;
         }
 
         internal static float CalculateArea(IOrderedEnumerable<DisciplinesChromosome> firstRank)

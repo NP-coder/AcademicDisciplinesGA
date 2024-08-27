@@ -32,11 +32,11 @@
                 <label asp-for="Input.ConfirmPassword"></label>
                 <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
             </div>
-@*            <div class="form-floating py-2">
+           <div class="form-floating py-2">
                <select asp-for="Input.Role" asp-items="@Model.Input.RoleList" class="form-select">
                    <option disabled selected>-Select Role-</option>
                </select>
-            </div>*@
+            </div>
             <div class="form-floating py-2">
                <select asp-for="Input.ChairId" asp-items="@Model.Input.ChairList" class="form-select">
                    <option disabled selected>-Select Chair-</option>
