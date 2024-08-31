@@ -19,13 +19,15 @@ namespace AcademicDisciplinesGA.Models
 
             modelBuilder.Entity<CoursePrerequisite>()
                 .HasOne(cp => cp.Course)
-                .WithMany(c => c.Prerequisites)
-                .HasForeignKey(cp => cp.CourseId);
+                .WithMany(c => c.Prerequisites)  // Assuming this navigation property in Course
+                .HasForeignKey(cp => cp.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<CoursePrerequisite>()
                 .HasOne(cp => cp.Prerequisite)
                 .WithMany()
-                .HasForeignKey(cp => cp.PrerequisiteId);
+                .HasForeignKey(cp => cp.PrerequisiteId)
+                .OnDelete(DeleteBehavior.Restrict);  // Modified to prevent CASCADE DELETE issues
 
             modelBuilder.Entity<CourseCompetence>()
                 .HasKey(cp => new { cp.CourseId, cp.CompetenceId });
@@ -40,7 +42,7 @@ namespace AcademicDisciplinesGA.Models
                 .WithMany()
                 .HasForeignKey(cp => cp.CompetenceId);
 
-            //Seed(modelBuilder);
+            Seed(modelBuilder);
         }
 
         public DbSet<Chair> Chairs { get; set; }
@@ -95,6 +97,21 @@ namespace AcademicDisciplinesGA.Models
                 new Chair { Id = 4, Title = "Department of Organic Chemistry", FacultyId = 4 }   
             );
 
+            var teachers = new List<Teacher>
+            {
+                new Teacher { Id = 1, Name = "Dr. Emily Johnson" },
+                new Teacher { Id = 2, Name = "Prof. Mark Brown" },
+                new Teacher { Id = 3, Name = "Dr. Susan Clark" },
+                new Teacher { Id = 4, Name = "Prof. Joseph Davis" },
+                new Teacher { Id = 5, Name = "Dr. Karen Wilson" },
+                new Teacher { Id = 6, Name = "Prof. Christopher Taylor" },
+                new Teacher { Id = 7, Name = "Dr. Daniel Moore" },
+                new Teacher { Id = 8, Name = "Prof. Laura Thompson" },
+                new Teacher { Id = 9, Name = "Dr. Patricia White" },
+                new Teacher { Id = 10, Name = "Prof. Sarah Harris" },
+            };
+            modelBuilder.Entity<Teacher>().HasData(teachers);
+
             var competences = new List<Competence>
             {
                 new Competence { Id = 1, Name = "Programming Basics", IsMandatory = true },
@@ -129,14 +146,14 @@ namespace AcademicDisciplinesGA.Models
                 new Course { Id = 8, Title = "Backend Web Development", ECTS = 6, TeacherId = 8, ChairId = 1 },
                 new Course { Id = 9, Title = "Computer Vision Basics", ECTS = 5, TeacherId = 9, ChairId = 1 },
                 new Course { Id = 10, Title = "Biostatistics 101", ECTS = 5, TeacherId = 10, ChairId = 1 },
-                new Course { Id = 11, Title = "Introduction to Cryptology", ECTS = 5, TeacherId = 11, ChairId = 1 },
-                new Course { Id = 12, Title = "Quantum Computing Fundamentals", ECTS = 6, TeacherId = 12, ChairId = 1 },
-                new Course { Id = 13, Title = "Networking Fundamentals", ECTS = 4, TeacherId = 13, ChairId = 1 },
-                new Course { Id = 14, Title = "Introduction to Ethical Hacking", ECTS = 5, TeacherId = 14, ChairId = 1 },
-                new Course { Id = 15, Title = "Cloud Computing Basics", ECTS = 5, TeacherId = 15, ChairId = 1 },
-                new Course { Id = 16, Title = "Game Development Basics", ECTS = 6, TeacherId = 16, ChairId = 1 },
-                new Course { Id = 17, Title = "Introduction to AI", ECTS = 5, TeacherId = 17, ChairId = 1 },
-                new Course { Id = 18, Title = "Mobile App Development 101", ECTS = 5, TeacherId = 18, ChairId = 1 }
+                new Course { Id = 11, Title = "Introduction to Cryptology", ECTS = 5, TeacherId = 1, ChairId = 1 },
+                new Course { Id = 12, Title = "Quantum Computing Fundamentals", ECTS = 6, TeacherId = 2, ChairId = 1 },
+                new Course { Id = 13, Title = "Networking Fundamentals", ECTS = 4, TeacherId = 3, ChairId = 1 },
+                new Course { Id = 14, Title = "Introduction to Ethical Hacking", ECTS = 5, TeacherId = 4, ChairId = 1 },
+                new Course { Id = 15, Title = "Cloud Computing Basics", ECTS = 5, TeacherId = 5, ChairId = 1 },
+                new Course { Id = 16, Title = "Game Development Basics", ECTS = 6, TeacherId = 6, ChairId = 1 },
+                new Course { Id = 17, Title = "Introduction to AI", ECTS = 5, TeacherId = 7, ChairId = 1 },
+                new Course { Id = 18, Title = "Mobile App Development 101", ECTS = 5, TeacherId = 8, ChairId = 1 }
             };
 
             modelBuilder.Entity<Competence>().HasData(competences);

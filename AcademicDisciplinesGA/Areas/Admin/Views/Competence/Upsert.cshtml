@@ -1,0 +1,17 @@
+﻿@using AcademicDisciplinesGA.Areas.Admin.Models
+@model CompetenceVM
+
+<h1>@(Model.Competence.Id == 0 ? "Create New" : "Edit") Competence</h1>
+
+<form asp-action="Upsert">
+    <div class="p-1">
+        <label asp-for="Competence.Name" class="control-label"></label>
+        <input asp-for="Competence.Name" class="form-control" />
+        <span asp-validation-for="Competence.Name" class="text-danger"></span>
+    </div>
+    <div class="p-1">
+        <input type="submit" value="Save" class="btn btn-primary" />
+    </div>
+</form>
+
+<a asp-action="Index">Back to List</a>
