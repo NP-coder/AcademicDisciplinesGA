@@ -20,7 +20,14 @@ namespace AcademicDisciplinesGA.Areas.Admin.Controllers
 
         public IActionResult Index()
         {
-            IEnumerable<Course> courseList = _context.Courses.Include(x => x.Teacher).Include(y => y.Chair).ToList();
+            IEnumerable<Course> courseList = _context.Courses
+                .Include(x => x.Teacher)
+                .Include(y => y.Chair)
+                .Include(c => c.Prerequisites)
+                    .ThenInclude(pr => pr.Prerequisite) // Завантаження властивостей пререквізитів
+                .Include(c => c.Competences)
+                    .ThenInclude(co => co.Competence)
+                .ToList();
             return View(courseList);
         }
 

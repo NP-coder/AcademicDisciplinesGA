@@ -14,21 +14,13 @@
     <table class="table table-info table-bordered table-striped">
         <thead class="text-center">
             <tr>
-                <th>
-                    Title
-                </th>
-                <th>
-                    ECTS
-                </th>
-                 <th>
-                    Chair
-                </th>
-                 <th>
-                    Teacher
-                </th>
-                <th>
-
-                </th>
+                <th>Title</th>
+                <th>ECTS</th>
+                <th>Chair</th>
+                <th>Teacher</th>
+                <th>Prerequisite</th>
+                <th>Competencies</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -45,6 +37,19 @@
                     </td>
                     <td>
                         @Html.DisplayFor(modelItem => item.Teacher.Name)
+                    </td>
+                    <td>
+                        @if (item.Prerequisites != null && item.Prerequisites.Any())
+                        {
+                            @Html.DisplayFor(modelItem => item.Prerequisites.FirstOrDefault().Prerequisite.Title)
+                        }
+                        else
+                        {
+                            @:None
+                        }
+                    </td>
+                    <td>
+                        @string.Join(", ", item.Competences.Select(c => c.Competence.Name))
                     </td>
                     <td class="text-center">
                         <div class="w-75 btn-group" role="group">

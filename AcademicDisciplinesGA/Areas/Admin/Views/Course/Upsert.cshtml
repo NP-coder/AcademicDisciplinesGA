@@ -31,15 +31,24 @@
             </select>
             <span asp-validation-for="Course.TeacherId" class="text-danger"></span>
         </div>
+        <!-- Add a select list for choosing a prerequisite course -->
+        <div class="mb-3">
+            <label asp-for="SelectedPrerequisiteId">Prerequisite Course</label>
+            <select asp-for="SelectedPrerequisiteId" asp-items="@Model.PrerequisiteList" class="form-select">
+                <option value="">--Select Prerequisite--</option>
+            </select>
+            <span asp-validation-for="SelectedPrerequisiteId" class="text-danger"></span>
+        </div>
+        <!-- Add a select list for choosing multiple competencies -->
+        <div class="mb-3">
+            <label asp-for="SelectedCompetenceIds">Competencies</label>
+            <select asp-for="SelectedCompetenceIds" asp-items="@Model.CompetenceList" class="form-select" multiple="multiple">
+                <!-- Multiple competencies can be selected -->
+            </select>
+            <span asp-validation-for="SelectedCompetenceIds" class="text-danger"></span>
+        </div>
         <div class="col-12">
-            @if (Model.Course.Id != 0)
-            {
-                <button type="submit" class="btn btn-primary" style="width: 150px">Update</button>
-            }
-            else
-            {
-                 <button type="submit" class="btn btn-primary" style="width: 150px">Create</button>
-            }
+            <button type="submit" class="btn btn-primary" style="width: 150px">@Model.Course.Id != 0 ? "Update" : "Create"</button>
             <a asp-controller="Course" asp-action="Index" class="btn btn-secondary" style="width: 150px">Back</a>
         </div>
     </div>

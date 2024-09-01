@@ -1,17 +1,33 @@
 ﻿@using AcademicDisciplinesGA.Areas.Admin.Models
 @model CompetenceVM
 
-<h1>@(Model.Competence.Id == 0 ? "Create New" : "Edit") Competence</h1>
-
-<form asp-action="Upsert">
-    <div class="p-1">
-        <label asp-for="Competence.Name" class="control-label"></label>
-        <input asp-for="Competence.Name" class="form-control" />
-        <span asp-validation-for="Competence.Name" class="text-danger"></span>
-    </div>
-    <div class="p-1">
-        <input type="submit" value="Save" class="btn btn-primary" />
+<form method="post" asp-action="Upsert">
+    <input asp-for="Competence.Id" hidden />
+    <div class="border p-3 mt-4">
+        <div class="row pb-2">
+            <h2 class="text-primary">@(Model.Competence.Id != 0 ? "Update" : "Create") Competence</h2>
+            <hr />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Competence.Name">Name</label>
+            <input asp-for="Competence.Name" class="form-control" />
+            <span asp-validation-for="Competence.Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3 form-check">
+            <label asp-for="Competence.IsMandatory" class="form-check-label"></label>
+            <input asp-for="Competence.IsMandatory" class="form-check-input" />
+            <span asp-validation-for="Competence.IsMandatory" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            @if (Model.Competence.Id != 0)
+            {
+                <button type="submit" class="btn btn-primary" style="width: 150px">Update</button>
+            }
+            else
+            {
+                <button type="submit" class="btn btn-primary" style="width: 150px">Create</button>
+            }
+            <a asp-controller="Competence" asp-action="Index" class="btn btn-secondary" style="width: 150px">Back</a>
+        </div>
     </div>
 </form>
-
-<a asp-action="Index">Back to List</a>

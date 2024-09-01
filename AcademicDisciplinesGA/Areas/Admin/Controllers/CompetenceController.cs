@@ -1,9 +1,12 @@
 ﻿using AcademicDisciplinesGA.Areas.Admin.Models;
 using AcademicDisciplinesGA.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AcademicDisciplinesGA.Areas.Admin.Controllers
 {
+    [Area("Admin")]
+    [Authorize(Roles = "Admin")]
     public class CompetenceController : Controller
     {
         private readonly ApplicationDbContext _context;
