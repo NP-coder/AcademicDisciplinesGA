@@ -33,6 +33,7 @@ namespace AcademicDisciplinesGA.GA
             TeacherFitness = IsTeacherSelected(Teachers);
             ChairFitness = IsChairSelected(Chairs);
         }
+
         public DisciplinesChromosome(List<CourseChromosome> courses, List<Teacher> teachers, List<Chair> chairs)
         {
             Sequence = courses.ToList();
@@ -43,11 +44,9 @@ namespace AcademicDisciplinesGA.GA
             ChairFitness = IsChairSelected(Chairs);
         }
 
-        public DisciplinesChromosome(ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs, List<Competence> studentInterests)
+        public DisciplinesChromosome(ApplicationDbContext dataContext, List<Competence> studentInterests)
         {
             _dataContext = dataContext;
-            Teachers = teachers;
-            Chairs = chairs;
 
             // Генерація курсів на основі компетенцій студента
             Generate(studentInterests);
@@ -58,8 +57,18 @@ namespace AcademicDisciplinesGA.GA
             // Підсумування ECTS після встановлення усіх курсів 
             ECTSCount = GetTotalECTS();
             // Оцінювання за критеріями
-            TeacherFitness = IsTeacherSelected(Teachers);
-            ChairFitness = IsChairSelected(Chairs);
+            //TeacherFitness = IsTeacherSelected(Teachers);
+            //ChairFitness = IsChairSelected(Chairs);
+            CompetenceFitness = CalculateCompetenceFitness();
+        }
+
+        public DisciplinesChromosome(List<CourseChromosome> courses, List<Competence> studentInterests)
+        {
+            Sequence = courses.ToList();
+            StudentCompetences = studentInterests;
+            ECTSCount = GetTotalECTS();
+            //TeacherFitness = IsTeacherSelected(Teachers);
+            //ChairFitness = IsChairSelected(Chairs);
             CompetenceFitness = CalculateCompetenceFitness();
         }
 

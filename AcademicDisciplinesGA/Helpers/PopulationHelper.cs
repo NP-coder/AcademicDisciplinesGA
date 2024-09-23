@@ -8,31 +8,8 @@ namespace AcademicDisciplinesGA.Helpers
     {
         private static Random random = new Random();
 
-        //public static List<DisciplinesChromosome> SpawnPopulation(ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs)
-        //{
-        //    var population = new HashSet<DisciplinesChromosome>();
-
-        //    int remainingCount = GAConfig.PopulationCount;
-
-        //    while (remainingCount > 0)
-        //    {
-        //        var individuals = Enumerable.Range(0, remainingCount)
-        //                                    .Select(i => new DisciplinesChromosome(dataContext, teachers, chairs))
-        //                                    .ToList();
-
-        //        foreach (var individual in individuals)
-        //        {
-        //            population.Add(individual);
-        //        }
-
-        //        remainingCount = GAConfig.PopulationCount - population.Count;
-        //    }
-
-        //    return population.ToList();
-        //}
-
         public static List<DisciplinesChromosome> SpawnPopulation(
-            ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs, List<Competence> competences)
+            ApplicationDbContext dataContext, List<Competence> competences)
         {
             var population = new HashSet<DisciplinesChromosome>();
 
@@ -40,7 +17,7 @@ namespace AcademicDisciplinesGA.Helpers
             while (remainingCount > 0)
             {
                 var individuals = Enumerable.Range(0, remainingCount)
-                                            .Select(i => new DisciplinesChromosome(dataContext, teachers, chairs, competences))
+                                            .Select(i => new DisciplinesChromosome(dataContext, competences))
                                             .ToList();
 
                 foreach (var individual in individuals)
@@ -79,7 +56,7 @@ namespace AcademicDisciplinesGA.Helpers
 
         }
 
-        public static DisciplinesChromosome DoCrossover(DisciplinesChromosome individualA, DisciplinesChromosome individualB, List<Teacher> teachers, List<Chair> chairs, int crossoverPosition = -1)
+        public static DisciplinesChromosome DoCrossover(DisciplinesChromosome individualA, DisciplinesChromosome individualB, List<Competence> competences, int crossoverPosition = -1)
         {
             crossoverPosition = crossoverPosition == -1
                 ? random.Next(1, individualA.Sequence.Count - 1)
@@ -103,14 +80,17 @@ namespace AcademicDisciplinesGA.Helpers
                 offspringSequence.Add(course);
             }
 
-            return new DisciplinesChromosome(offspringSequence, teachers, chairs);
+            return new DisciplinesChromosome(offspringSequence, competences);
         }
 
-        public static DisciplinesChromosome DoMutate(DisciplinesChromosome individual, ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs)
+        public static DisciplinesChromosome DoMutate(DisciplinesChromosome individual, ApplicationDbContext dataContext, List<Competence> competences)
         {
             var courses = dataContext.Courses
                 .Include(course => course.Teacher)
-                .Include(course => course.Chair).ToList();
+                .Include(course => course.Chair)
+                .Include(course => course.Competences)
+                .ThenInclude(courseCompetence => courseCompetence.Competence)
+                .ToList();
 
             var sequence = individual.Sequence;
             int randomIndex = random.Next(0, sequence.Count);
@@ -127,29 +107,31 @@ namespace AcademicDisciplinesGA.Helpers
                     Title = selectedCourse.Title,
                     ECTS = selectedCourse.ECTS,
                     ChairId = selectedCourse.ChairId,
-                    TeacherId = selectedCourse.TeacherId
+                    TeacherId = selectedCourse.TeacherId,
+                    RequiredCompetences = selectedCourse.Competences.Select(cc => cc.Competence).ToList(),
+                    Prerequisites = selectedCourse.Prerequisites.Select(p => p.PrerequisiteId).ToList()
                 };
             }
             while (sequence.Contains(newCourse));
 
             sequence[randomIndex] = newCourse;
 
-            return new DisciplinesChromosome(sequence, teachers, chairs);
+            return new DisciplinesChromosome(sequence, competences);
         }
 
-        public static (DisciplinesChromosome, DisciplinesChromosome) Mutate(DisciplinesChromosome individualA, DisciplinesChromosome individualB, ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs)
+        public static (DisciplinesChromosome, DisciplinesChromosome) Mutate(DisciplinesChromosome individualA, DisciplinesChromosome individualB, ApplicationDbContext dataContext, List<Competence> competences)
         {
-            var newIndividualA = new DisciplinesChromosome(individualA.Sequence, teachers, chairs);
-            var newindividualB = new DisciplinesChromosome(individualB.Sequence, teachers, chairs);
+            var newIndividualA = new DisciplinesChromosome(individualA.Sequence, competences);
+            var newindividualB = new DisciplinesChromosome(individualB.Sequence, competences);
 
             if (random.NextDouble() < GAConfig.MutationChance)
             {
-                newIndividualA = DoMutate(individualA, dataContext, teachers, chairs);
+                newIndividualA = DoMutate(individualA, dataContext, competences);
             }
 
             if (random.NextDouble() < GAConfig.MutationChance)
             {
-                newindividualB = DoMutate(individualB, dataContext, teachers, chairs);
+                newindividualB = DoMutate(individualB, dataContext, competences);
             }
 
             return (newIndividualA, newindividualB);

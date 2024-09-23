@@ -29,9 +29,17 @@ namespace AcademicDisciplinesGA.GA
             Spawn();
         }
 
+        public DisciplinesPopulation(ApplicationDbContext dbContext, List<Competence> competences)
+        {
+            _dataContext = dbContext;
+            Competences = competences;
+            FitnessOverTime = new List<int>();
+            Spawn();
+        }
+
         public void Spawn()
         {
-            var result = PopulationHelper.SpawnPopulation(_dataContext, Teachers, Chairs, Competences);
+            var result = PopulationHelper.SpawnPopulation(_dataContext, Competences);
             Population = result;
         }
 
@@ -79,7 +87,7 @@ namespace AcademicDisciplinesGA.GA
 
             newPopulation.ForEach(i => Population.Add(i));
 
-            var firstRank = Population.OrderBy(c => c.ChairFitness).ThenBy(t => t.TeacherFitness);
+            var firstRank = Population.OrderBy(c => c.ChairFitness).ThenBy(t => t.TeacherFitness); //change
             var currentArea = MultiObjectiveHelper.CalculateArea(firstRank);
 
             if (Math.Abs(previousConvergenceArea - currentArea) < 0.1)
@@ -93,7 +101,7 @@ namespace AcademicDisciplinesGA.GA
             }
         }
 
-        public DisciplinesChromosome GetBestIndividual()
+        public DisciplinesChromosome GetBestIndividual() //change
         {
             DisciplinesChromosome bestChromosome = null;
             int maxFitness = int.MinValue;
@@ -115,7 +123,7 @@ namespace AcademicDisciplinesGA.GA
 
         private (DisciplinesChromosome, DisciplinesChromosome) Mutate(DisciplinesChromosome individualA, DisciplinesChromosome individualB)
         {
-            return PopulationHelper.Mutate(individualA, individualB, _dataContext, Teachers, Chairs);
+            return PopulationHelper.Mutate(individualA, individualB, _dataContext, Competences);
         }
 
         private (DisciplinesChromosome, DisciplinesChromosome) GetOffspring(DisciplinesChromosome individualA, DisciplinesChromosome individualB)
@@ -128,7 +136,7 @@ namespace AcademicDisciplinesGA.GA
 
         private DisciplinesChromosome DoCrossover(DisciplinesChromosome individualA, DisciplinesChromosome individualB)
         {
-            return PopulationHelper.DoCrossover(individualA, individualB, Teachers, Chairs);
+            return PopulationHelper.DoCrossover(individualA, individualB, Competences);
         }
 
         private DisciplinesChromosome GetParent()

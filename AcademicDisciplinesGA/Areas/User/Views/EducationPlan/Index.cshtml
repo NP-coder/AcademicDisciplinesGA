@@ -1,0 +1,45 @@
+﻿@using AcademicDisciplinesGA.Areas.User.Models
+@model CompetenceSelectionVM
+
+<h2>Select Competences for Your Education Plan</h2>
+
+<form method="post">
+    <div class="row">
+        @foreach (var competence in Model.Competences)
+        {
+            <div class="col-md-4">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <p class="card-text">@competence.Text</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SelectedCompetenceIds" value="@competence.Value" @(Model.SelectedCompetenceIds.Contains(int.Parse(competence.Value)) ? "checked" : "")>
+                                <label class="form-check-label">
+                                    Select
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+<script>
+    $(document).ready(function () {
+        $('.form-check-input').on('change', function () {
+            let selectedItems = @Html.Raw(Json.Serialize(Model.SelectedCompetenceIds));
+            let value = $(this).val();
+            if ($(this).is(':checked')) {
+                selectedItems.push(value);
+            } else {
+                selectedItems = selectedItems.filter(item => item !== value);
+            }
+            // Update the model
+             @Model.SelectedCompetenceIds = selectedItems;
+        });
+    });
+</script>
