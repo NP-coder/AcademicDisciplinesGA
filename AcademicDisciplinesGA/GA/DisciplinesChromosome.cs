@@ -21,7 +21,7 @@ namespace AcademicDisciplinesGA.GA
 
         public static int _length = 10;
 
-        static Random Random = new Random();
+        static readonly Random Random = new Random();
 
         public DisciplinesChromosome(ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs)
         {
@@ -44,21 +44,19 @@ namespace AcademicDisciplinesGA.GA
             ChairFitness = IsChairSelected(Chairs);
         }
 
+        // є можливість що в популяцію непопаде дисципліна що є пррериквізитом
         public DisciplinesChromosome(ApplicationDbContext dataContext, List<Competence> studentInterests)
         {
             _dataContext = dataContext;
-
-            // Генерація курсів на основі компетенцій студента
-            Generate(studentInterests);
-
-            // Алокація курсів з пререквізитами і балансуванням навантаження
-            GenerateCoursesWithPrerequisitesAndDistributeLoad();
-
+            StudentCompetences = studentInterests;
+            Generate();
+            // Розподіл дисциплін із пререквізитами
+            AllocateCoursesWithPrerequisites();
+            // Розподіл навантаження по семестрах
+            LoadFitness = CalculateLoadDistribution();
             // Підсумування ECTS після встановлення усіх курсів 
             ECTSCount = GetTotalECTS();
             // Оцінювання за критеріями
-            //TeacherFitness = IsTeacherSelected(Teachers);
-            //ChairFitness = IsChairSelected(Chairs);
             CompetenceFitness = CalculateCompetenceFitness();
         }
 
@@ -66,9 +64,9 @@ namespace AcademicDisciplinesGA.GA
         {
             Sequence = courses.ToList();
             StudentCompetences = studentInterests;
+            AllocateCoursesWithPrerequisites();
+            LoadFitness = CalculateLoadDistribution();
             ECTSCount = GetTotalECTS();
-            //TeacherFitness = IsTeacherSelected(Teachers);
-            //ChairFitness = IsChairSelected(Chairs);
             CompetenceFitness = CalculateCompetenceFitness();
         }
 
@@ -115,15 +113,6 @@ namespace AcademicDisciplinesGA.GA
             return totalFitness;
         }
 
-        public void GenerateCoursesWithPrerequisitesAndDistributeLoad()
-        {
-            // Крок 2.1: Розподіл дисциплін із пререквізитами
-            AllocateCoursesWithPrerequisites();
-
-            // Крок 2.2: Розподіл навантаження по семестрах
-            CalculateLoadDistribution();
-        }
-
         public int CalculateLoadDistribution()
         {
             // Крок 2.2: Розрахунок штрафу за розходження між фактичним і ідеальним навантаженням
@@ -148,16 +137,20 @@ namespace AcademicDisciplinesGA.GA
         {
             var graph = new Dictionary<int, List<int>>();
             var inDegree = new Dictionary<int, int>();
-            //var allCourses = _dataContext.Courses.ToList();
+            var courseIndexMap = new Dictionary<int, int>();
 
-            // Побудова графу залежностей і розрахунок ступеня входу для кожного курсу
-            foreach (var course in Sequence) //allCourses
+            // Initialize graph structure and inDegree map
+            for (int index = 0; index < Sequence.Count; index++)
             {
+                var course = Sequence[index];
+                courseIndexMap[course.Id] = index;
+
                 if (!graph.ContainsKey(course.Id))
                 {
                     graph[course.Id] = new List<int>();
                     inDegree[course.Id] = 0;
                 }
+
                 foreach (var prereq in course.Prerequisites)
                 {
                     if (!graph.ContainsKey(prereq))
@@ -170,11 +163,11 @@ namespace AcademicDisciplinesGA.GA
                 }
             }
 
-            // Застосування алгоритму топологічного сортування
             var queue = new Queue<int>();
-            foreach (var key in inDegree.Keys)
+            foreach (var key in inDegree)
             {
-                if (inDegree[key] == 0) queue.Enqueue(key);
+                if (key.Value == 0)
+                    queue.Enqueue(key.Key);
             }
 
             int semester = 1, year = 1;
@@ -184,23 +177,27 @@ namespace AcademicDisciplinesGA.GA
                 for (int i = 0; i < size; i++)
                 {
                     var courseId = queue.Dequeue();
-                    //var course = allCourses.Find(c => c.Id == courseId);
-                    var course = Sequence.Find(c => c.Id == courseId);
+                    var courseIndex = courseIndexMap[courseId];
+                    var course = Sequence[courseIndex];
+
                     course.Year = year;
                     course.Semester = semester;
+                    Sequence[courseIndex] = course;
 
                     foreach (var neighbor in graph[courseId])
                     {
                         inDegree[neighbor]--;
                         if (inDegree[neighbor] == 0)
-                        {
                             queue.Enqueue(neighbor);
-                        }
                     }
                 }
 
                 semester++;
-                if (semester > 2) { semester = 1; year++; }
+                if (semester > 2)
+                {
+                    semester = 1;
+                    year++;
+                }
             }
         }
 
@@ -251,129 +248,60 @@ namespace AcademicDisciplinesGA.GA
             return totalSelected;
         }
 
-        public void Generate()
+        // додати в сек обовязкові курси
+        // перевірка на ектс???
+        public void AddCourseWithPrerequisites(Course course, HashSet<int> selectedCoursesIds, List<CourseChromosome> result)
         {
-            var courses = _dataContext.Courses
-                .Include(course => course.Teacher)
-                .Include(course => course.Chair).ToList();
-            var selectedCoursesIds = new HashSet<int>();
-            var result = new List<CourseChromosome>();
-            int count = 0;
+            if (selectedCoursesIds.Contains(course.Id))
+                return;
 
-            for (int i = 0; i < 60; i = count)
+            // Спочатку додаємо пререквізити
+            foreach (var prerequisite in course.Prerequisites)
             {
-                int courseId;
-                do
-                {
-                    courseId = Random.Next(courses.First().Id, courses.Last().Id + 1);
-                }
-                while (selectedCoursesIds.Contains(courseId));
-                selectedCoursesIds.Add(courseId);
-                var selectedCourse = courses.Find(c => c.Id.Equals(courseId));
-                result.Add(new CourseChromosome()
-                {
-                    Id = selectedCourse.Id,
-                    Title = selectedCourse.Title,
-                    ECTS = selectedCourse.ECTS,
-                    ChairId = selectedCourse.ChairId,
-                    TeacherId = selectedCourse.TeacherId
-                });
-                count += selectedCourse.ECTS;
+                Course prereqCourse = _dataContext.Courses.Find(prerequisite.PrerequisiteId);
+                if (prereqCourse != null)
+                    AddCourseWithPrerequisites(prereqCourse, selectedCoursesIds, result);
             }
 
-            Sequence = result;
+            // Додаємо себе
+            selectedCoursesIds.Add(course.Id);
+            result.Add(new CourseChromosome
+            {
+                Id = course.Id,
+                Title = course.Title,
+                ECTS = course.ECTS,
+                ChairId = course.ChairId,
+                TeacherId = course.TeacherId,
+                RequiredCompetences = course.Competences.Select(cc => cc.Competence).ToList(),
+                Prerequisites = course.Prerequisites.Select(p => p.PrerequisiteId).ToList()
+            });
         }
 
-        //public void Generate(List<Competence> studentInterests)
-        //{
-        //    var allCourses = _dataContext.Courses
-        //        .Include(course => course.Teacher)
-        //        .Include(course => course.Chair)
-        //        .Include(course => course.RequiredCompetences)
-        //        .Include(course => course.Prerequisites)  // Завантажуємо пререквізити курсів
-        //        .ToList();
-
-        //    var filteredCourses = allCourses.Where(course =>
-        //        studentInterests.Any(sc => course.RequiredCompetences.Contains(sc))).ToList();
-
-        //    var selectedCoursesIds = new HashSet<int>();
-        //    var result = new List<CourseChromosome>();
-        //    int count = 0;
-
-        //    for (int i = 0; i < 60; i++)
-        //    {
-        //        if (filteredCourses.Count == 0)
-        //            break;
-
-        //        // Выбираємо курс випадковим чином
-        //        int index = Random.Next(0, filteredCourses.Count);
-        //        var selectedCourse = filteredCourses[index];
-
-        //        // Перевіряємо, чи всі необхідні пререквізити містяться у вже вибраних курсах
-        //        var prerequisiteIds = selectedCourse.Prerequisites.Select(p => p.PrerequisiteId).ToList();
-        //        if (prerequisiteIds.All(pid => selectedCoursesIds.Contains(pid)))
-        //        {
-        //            // Додаємо вибраний курс до результативної послідовності
-        //            selectedCoursesIds.Add(selectedCourse.Id);
-        //            result.Add(new CourseChromosome()
-        //            {
-        //                Id = selectedCourse.Id,
-        //                Title = selectedCourse.Title,
-        //                ECTS = selectedCourse.ECTS,
-        //                ChairId = selectedCourse.ChairId,
-        //                TeacherId = selectedCourse.TeacherId,
-        //                RequiredCompetences = selectedCourse.RequiredCompetences,
-        //                Prerequisites = prerequisiteIds  // Заповнюємо список ID пререквізитів
-        //            });
-        //            count += selectedCourse.ECTS;
-
-        //            // Після додавання курсу видаляємо його з вихідного списку
-        //            filteredCourses.RemoveAt(index);
-        //        }
-        //    }
-
-        //    Sequence = result.OrderBy(c => c.Prerequisites.Count).ThenBy(c => c.Id).ToList();
-        //    // Спроба впорядкування курсів по количеству пререквізитів і ID, що допоможе дотримуватися логічного порядку
-        //}
-
-        public void Generate(List<Competence> studentInterests)
+        public void Generate()
         {
             var allCourses = _dataContext.Courses
                 .Include(course => course.Teacher)
                 .Include(course => course.Chair)
-                .Include(course => course.Competences)
-                .ThenInclude(courseCompetence => courseCompetence.Competence)
+                .Include(course => course.Competences).ThenInclude(courseCompetence => courseCompetence.Competence)
+                .Include(course => course.Prerequisites)
                 .ToList();
-
-            var filteredCourses = allCourses.Where(course =>
-                course.Competences.Any(cc => studentInterests.Contains(cc.Competence))).ToList();
 
             var selectedCoursesIds = new HashSet<int>();
             var result = new List<CourseChromosome>();
 
-            while (selectedCoursesIds.Count < _length && filteredCourses.Count > 0)
+            while (result.Count < _length)
             {
-                int index = Random.Next(0, filteredCourses.Count);
-                var selectedCourse = filteredCourses[index];
+                int index = Random.Next(0, allCourses.Count);
+                Course selectedCourse = allCourses[index];
 
-                if (!selectedCoursesIds.Contains(selectedCourse.Id))
-                {
-                    selectedCoursesIds.Add(selectedCourse.Id);
-                    result.Add(new CourseChromosome()
-                    {
-                        Id = selectedCourse.Id,
-                        Title = selectedCourse.Title,
-                        ECTS = selectedCourse.ECTS,
-                        ChairId = selectedCourse.ChairId,
-                        TeacherId = selectedCourse.TeacherId,
-                        RequiredCompetences = selectedCourse.Competences.Select(cc => cc.Competence).ToList(),
-                        Prerequisites = selectedCourse.Prerequisites.Select(p => p.PrerequisiteId).ToList()  // Зберігаємо пререквізити для наступного використання
-                    });
-                }
+                AddCourseWithPrerequisites(selectedCourse, selectedCoursesIds, result);
+
+                // Обмеження за кількістю курсів
+                if (result.Count >= _length)
+                    break;
             }
 
             Sequence = result;
         }
-
     }
 }

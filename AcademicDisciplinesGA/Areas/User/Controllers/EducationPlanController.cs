@@ -5,6 +5,7 @@ using AcademicDisciplinesGA.Areas.User.Models;
 using Microsoft.AspNetCore.Authorization;
 using AcademicDisciplinesGA.GA;
 using GeneticSharp;
+using Microsoft.EntityFrameworkCore;
 
 namespace AcademicDisciplinesGA.Areas.User.Controllers
 {
@@ -21,7 +22,6 @@ namespace AcademicDisciplinesGA.Areas.User.Controllers
             _context = context;
         }
 
-        // Показ форми для вибору компетентностей
         public IActionResult Index()
         {
             var model = new CompetenceSelectionVM
@@ -59,45 +59,62 @@ namespace AcademicDisciplinesGA.Areas.User.Controllers
 
             ViewData["Courses"] = ConvertToCourses(disciplinesChromosomes.Sequence);
 
-            return View();
+            return View("Result");
         }
 
         private DisciplinesChromosome Run()
         {
-            while (population.GenerationCount < GAConfig.MaxGenerations || population.NoImprovementCount < GAConfig.MaxNoImprovementCount)
-            {
-                population.DoGeneration();
-            }
+            //while (population.GenerationCount < GAConfig.MaxGenerations || population.NoImprovementCount < GAConfig.MaxNoImprovementCount)
+            //{
+            //    population.DoGeneration();
+            //}
 
             return population.GetBestIndividual();
         }
 
         public List<Course> ConvertToCourses(List<CourseChromosome> courseChromosomes)
         {
-            var courseTeacherIds = courseChromosomes.Select(c => c.TeacherId).ToList();
-            var courseChairIds = courseChromosomes.Select(c => c.ChairId).ToList();
+            var courseIds = courseChromosomes.Select(c => c.Id).ToList();
 
-            var teachers = _context.Teachers.Where(t => courseTeacherIds.Contains(t.Id)).ToList();
-            var chairs = _context.Chairs.Where(c => courseChairIds.Contains(c.Id)).ToList();
+            // Підготовка завантаження відповідних даних з контексту
+            var coursesCompleteData = _context.Courses
+                .Where(c => courseIds.Contains(c.Id))
+                .Include(c => c.Teacher)
+                .Include(c => c.Chair)
+                .Include(c => c.Competences)
+                    .ThenInclude(cc => cc.Competence)
+                .Include(c => c.Prerequisites)
+                    .ThenInclude(cp => cp.Prerequisite)
+                .ToList();
 
-            var courses = courseChromosomes.Select(cc =>
+            // Мапінг даних з CourseChromosome до Course
+            var mappedCourses = courseChromosomes.Select(cc =>
             {
+                var courseData = coursesCompleteData.FirstOrDefault(c => c.Id == cc.Id);
+
+                if (courseData == null)
+                {
+                    return null;
+                }
+
                 var course = new Course
                 {
                     Id = cc.Id,
                     Title = cc.Title,
                     ECTS = cc.ECTS,
                     TeacherId = cc.TeacherId,
-                    ChairId = cc.ChairId
+                    ChairId = cc.ChairId,
+                    Teacher = courseData.Teacher,
+                    Chair = courseData.Chair,
+                    Competences = courseData.Competences,
+                    Prerequisites = courseData.Prerequisites
                 };
 
-                course.Teacher = teachers.FirstOrDefault(t => t.Id == course.TeacherId);
-                course.Chair = chairs.FirstOrDefault(c => c.Id == course.ChairId);
-
                 return course;
-            }).ToList();
+            }).Where(c => c != null)
+            .ToList();
 
-            return courses;
+            return mappedCourses;
         }
     }
 }

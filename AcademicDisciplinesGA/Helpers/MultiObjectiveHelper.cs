@@ -8,8 +8,8 @@ namespace AcademicDisciplinesGA.Helpers
         {
             foreach (var individual in population)
             {
-                individual.RecalculateCompetenceFitness(); // Запуск оновлення фітнесу за компетентностями
-                individual.LoadFitness = individual.CalculateLoadDistribution();
+                //individual.RecalculateCompetenceFitness(); // Запуск оновлення фітнесу за компетентностями
+                //individual.LoadFitness = individual.CalculateLoadDistribution();
                 individual.Rank = -1;
             }
             CalculateRank(population);

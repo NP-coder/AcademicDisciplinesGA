@@ -6,7 +6,7 @@ namespace AcademicDisciplinesGA.Helpers
 {
     public class PopulationHelper
     {
-        private static Random random = new Random();
+        private static readonly Random random = new Random();
 
         public static List<DisciplinesChromosome> SpawnPopulation(
             ApplicationDbContext dataContext, List<Competence> competences)
@@ -56,28 +56,56 @@ namespace AcademicDisciplinesGA.Helpers
 
         }
 
+        //public static DisciplinesChromosome DoCrossover(DisciplinesChromosome individualA, DisciplinesChromosome individualB, List<Competence> competences, int crossoverPosition = -1)
+        //{
+        //    crossoverPosition = crossoverPosition == -1
+        //        ? random.Next(1, individualA.Sequence.Count - 1)
+        //        : crossoverPosition;
+
+        //    var offspringSequence = individualA.Sequence.Take(crossoverPosition).ToList();
+        //    var appeared = offspringSequence.ToHashSet();
+
+        //    foreach (var course in individualB.Sequence)
+        //    {
+        //        if (appeared.Contains(course))
+        //        {
+        //            continue;
+        //        }
+
+        //        if (offspringSequence.Count == individualA.Sequence.Count)
+        //        {
+        //            break;
+        //        }
+
+        //        offspringSequence.Add(course);
+        //    }
+
+        //    return new DisciplinesChromosome(offspringSequence, competences);
+        //}
+
         public static DisciplinesChromosome DoCrossover(DisciplinesChromosome individualA, DisciplinesChromosome individualB, List<Competence> competences, int crossoverPosition = -1)
         {
+            // Визначення позиції для схрещування, якщо вона не вказана
             crossoverPosition = crossoverPosition == -1
                 ? random.Next(1, individualA.Sequence.Count - 1)
                 : crossoverPosition;
 
+            // Вильотова послідовність базується на першій частині послідовності A
             var offspringSequence = individualA.Sequence.Take(crossoverPosition).ToList();
-            var appeared = offspringSequence.ToHashSet();
+            var appeared = new HashSet<int>(offspringSequence.Select(course => course.Id));
 
+            // Додавання курсів з послідовності B, перевіряючи, що курси не були вже додані
             foreach (var course in individualB.Sequence)
             {
-                if (appeared.Contains(course))
+                if (!appeared.Contains(course.Id))
                 {
-                    continue;
+                    offspringSequence.Add(course);
+                    appeared.Add(course.Id);  // Додаємо ID доданого курсу до HashSet для подальших перевірок
+                    if (offspringSequence.Count == individualA.Sequence.Count)
+                    {
+                        break;
+                    }
                 }
-
-                if (offspringSequence.Count == individualA.Sequence.Count)
-                {
-                    break;
-                }
-
-                offspringSequence.Add(course);
             }
 
             return new DisciplinesChromosome(offspringSequence, competences);
@@ -88,8 +116,8 @@ namespace AcademicDisciplinesGA.Helpers
             var courses = dataContext.Courses
                 .Include(course => course.Teacher)
                 .Include(course => course.Chair)
-                .Include(course => course.Competences)
-                .ThenInclude(courseCompetence => courseCompetence.Competence)
+                .Include(course => course.Competences).ThenInclude(courseCompetence => courseCompetence.Competence)
+                .Include(course => course.Prerequisites)
                 .ToList();
 
             var sequence = individual.Sequence;
@@ -118,6 +146,36 @@ namespace AcademicDisciplinesGA.Helpers
 
             return new DisciplinesChromosome(sequence, competences);
         }
+
+        //public static DisciplinesChromosome DoMutate(DisciplinesChromosome individual, ApplicationDbContext dataContext, List<Competence> competences)
+        //{
+        //    var courses = dataContext.Courses.Include(c => c.Prerequisites).ToList();
+        //    var sequence = new List<CourseChromosome>(individual.Sequence);
+
+        //    int randomIndex = random.Next(sequence.Count);
+        //    CourseChromosome randomCourse = sequence[randomIndex];
+        //    int newCourseId;
+
+        //    do
+        //    {
+        //        newCourseId = courses[random.Next(courses.Count)].Id;
+        //    }
+        //    while (sequence.Any(c => c.Id == newCourseId) || courses.FirstOrDefault(c => c.Id == newCourseId).Prerequisites.Any(p => !sequence.Any(sc => sc.Id == p.PrerequisiteId)));
+
+        //    var selectedCourse = courses.Find(c => c.Id == newCourseId);
+        //    sequence[randomIndex] = new CourseChromosome()
+        //    {
+        //        Id = selectedCourse.Id,
+        //        Title = selectedCourse.Title,
+        //        ECTS = selectedCourse.ECTS,
+        //        ChairId = selectedCourse.ChairId,
+        //        TeacherId = selectedCourse.TeacherId,
+        //        RequiredCompetences = selectedCourse.Competences.Select(cc => cc.Competence).ToList(),
+        //        Prerequisites = selectedCourse.Prerequisites.Select(p => p.PrerequisiteId).ToList()
+        //    };
+
+        //    return new DisciplinesChromosome(sequence, competences);
+        //}
 
         public static (DisciplinesChromosome, DisciplinesChromosome) Mutate(DisciplinesChromosome individualA, DisciplinesChromosome individualB, ApplicationDbContext dataContext, List<Competence> competences)
         {

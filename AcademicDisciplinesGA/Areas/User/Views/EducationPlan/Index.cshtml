@@ -3,7 +3,9 @@
 
 <h2>Select Competences for Your Education Plan</h2>
 
-<form method="post">
+<form method="post" asp-action="SelectCompetences">
+    <input asp-for="User.Id" hidden />
+    <span asp-validation-for="User.Id" class="text-danger"></span>
     <div class="row">
         @foreach (var competence in Model.Competences)
         {
@@ -38,7 +40,7 @@
             } else {
                 selectedItems = selectedItems.filter(item => item !== value);
             }
-            // Update the model
+
              @Model.SelectedCompetenceIds = selectedItems;
         });
     });

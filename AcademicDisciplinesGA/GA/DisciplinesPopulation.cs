@@ -19,16 +19,6 @@ namespace AcademicDisciplinesGA.GA
 
         private float previousConvergenceArea = float.MaxValue;
 
-        public DisciplinesPopulation(ApplicationDbContext dbContext, List<Teacher> teachers, List<Chair> chairs, List<Competence> competences)
-        {
-            _dataContext = dbContext;
-            Teachers = teachers;
-            Chairs = chairs;
-            Competences = competences;
-            FitnessOverTime = new List<int>();
-            Spawn();
-        }
-
         public DisciplinesPopulation(ApplicationDbContext dbContext, List<Competence> competences)
         {
             _dataContext = dbContext;
@@ -87,7 +77,7 @@ namespace AcademicDisciplinesGA.GA
 
             newPopulation.ForEach(i => Population.Add(i));
 
-            var firstRank = Population.OrderBy(c => c.ChairFitness).ThenBy(t => t.TeacherFitness); //change
+            var firstRank = Population.OrderBy(c => c.CompetenceFitness).ThenBy(t => t.LoadFitness); //change
             var currentArea = MultiObjectiveHelper.CalculateArea(firstRank);
 
             if (Math.Abs(previousConvergenceArea - currentArea) < 0.1)
@@ -108,9 +98,9 @@ namespace AcademicDisciplinesGA.GA
 
             foreach (var chromosome in Population)
             {
-                if (chromosome.TeacherFitness + chromosome.ChairFitness > maxFitness)
+                if (chromosome.CompetenceFitness + chromosome.LoadFitness > maxFitness)
                 {
-                    maxFitness = chromosome.TeacherFitness + chromosome.ChairFitness;
+                    maxFitness = chromosome.CompetenceFitness + chromosome.LoadFitness;
                     bestChromosome = chromosome;
                 }
             }
