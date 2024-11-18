@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using AcademicDisciplinesGA.GA;
 using GeneticSharp;
 using Microsoft.EntityFrameworkCore;
+using AcademicDisciplinesGA.Areas.Admin.Models;
+using CourseVM = AcademicDisciplinesGA.Areas.User.Models.CourseVM;
 
 namespace AcademicDisciplinesGA.Areas.User.Controllers
 {
@@ -26,11 +28,13 @@ namespace AcademicDisciplinesGA.Areas.User.Controllers
         {
             var model = new CompetenceSelectionVM
             {
-                Competences = _context.Competences.Select(c => new SelectListItem
-                {
-                    Text = c.Name,
-                    Value = c.Id.ToString()
-                }).ToList()
+                Competences = _context.Competences
+                    .Where(c => !c.IsMandatory)
+                    .Select(c => new SelectListItem
+                    {
+                        Text = c.Name,
+                        Value = c.Id.ToString()
+                    }).ToList()
             };
 
             return View(model);
@@ -52,6 +56,13 @@ namespace AcademicDisciplinesGA.Areas.User.Controllers
         // Генерація навчального плану з обраними компетентностями
         public IActionResult GenerateEducationPlan(List<int> compIds)
         {
+            var mandatoryCompIds = _context.Competences
+                .Where(c => c.IsMandatory)
+                .Select(c => c.Id)
+                .ToList();
+
+            compIds.AddRange(mandatoryCompIds);
+
             var competences = _context.Competences.Where(c => compIds.Contains(c.Id)).ToList();
             population = new DisciplinesPopulation(_context, competences);
 
@@ -64,57 +75,56 @@ namespace AcademicDisciplinesGA.Areas.User.Controllers
 
         private DisciplinesChromosome Run()
         {
-            //while (population.GenerationCount < GAConfig.MaxGenerations || population.NoImprovementCount < GAConfig.MaxNoImprovementCount)
-            //{
-            //    population.DoGeneration();
-            //}
+            while (population.GenerationCount < GAConfig.MaxGenerations || population.NoImprovementCount < GAConfig.MaxNoImprovementCount)
+            {
+                population.DoGeneration();
+            }
 
             return population.GetBestIndividual();
         }
 
-        public List<Course> ConvertToCourses(List<CourseChromosome> courseChromosomes)
+        public List<CourseVM> ConvertToCourses(List<CourseChromosome> courseChromosomes)
         {
             var courseIds = courseChromosomes.Select(c => c.Id).ToList();
-
-            // Підготовка завантаження відповідних даних з контексту
-            var coursesCompleteData = _context.Courses
+            var coursesDetails = _context.Courses
                 .Where(c => courseIds.Contains(c.Id))
                 .Include(c => c.Teacher)
                 .Include(c => c.Chair)
-                .Include(c => c.Competences)
-                    .ThenInclude(cc => cc.Competence)
-                .Include(c => c.Prerequisites)
-                    .ThenInclude(cp => cp.Prerequisite)
+                .Include(c => c.Competences).ThenInclude(cc => cc.Competence)
+                .Include(c => c.Prerequisites).ThenInclude(pr => pr.Prerequisite)
                 .ToList();
 
-            // Мапінг даних з CourseChromosome до Course
-            var mappedCourses = courseChromosomes.Select(cc =>
+            var courses = courseChromosomes.Select(cc =>
             {
-                var courseData = coursesCompleteData.FirstOrDefault(c => c.Id == cc.Id);
-
+                var courseData = coursesDetails.FirstOrDefault(c => c.Id == cc.Id);
                 if (courseData == null)
-                {
                     return null;
-                }
 
-                var course = new Course
+                return new CourseVM
                 {
                     Id = cc.Id,
                     Title = cc.Title,
                     ECTS = cc.ECTS,
-                    TeacherId = cc.TeacherId,
-                    ChairId = cc.ChairId,
                     Teacher = courseData.Teacher,
                     Chair = courseData.Chair,
                     Competences = courseData.Competences,
-                    Prerequisites = courseData.Prerequisites
+                    Prerequisites = courseData.Prerequisites,
+                    Year = cc.Year,
+                    Semester = cc.Semester
                 };
+            }).Where(c => c != null).ToList();
 
-                return course;
-            }).Where(c => c != null)
-            .ToList();
+            courses.Sort((x, y) =>
+            {
+                int yearComparison = x.Year.CompareTo(y.Year);
+                if (yearComparison == 0)
+                {
+                    return x.Semester.CompareTo(y.Semester);
+                }
+                return yearComparison;
+            });
 
-            return mappedCourses;
+            return courses;
         }
     }
 }

@@ -51,7 +51,7 @@ namespace AcademicDisciplinesGA.GA
 
                 var (offspringA, offspringB) = GetOffspring(mother, father);
 
-                (offspringA, offspringB) = Mutate(offspringA, offspringB);
+                //(offspringA, offspringB) = Mutate(offspringA, offspringB);
 
                 offspring.Add(offspringA);
                 offspring.Add(offspringB);

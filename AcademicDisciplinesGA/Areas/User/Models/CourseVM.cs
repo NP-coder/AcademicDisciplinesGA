@@ -1,27 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+﻿using AcademicDisciplinesGA.Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
-namespace AcademicDisciplinesGA.Models
+namespace AcademicDisciplinesGA.Areas.User.Models
 {
-    public class Course
+    public class CourseVM
     {
         public int Id { get; set; }
         public string Title { get; set; }
         public int ECTS { get; set; }
-
-        public int TeacherId { get; set; }
-
-        [ValidateNever]
         public Teacher Teacher { get; set; }
-
-        public int ChairId { get; set; }
-
-        [ValidateNever]
         public Chair Chair { get; set; }
-
-        [ValidateNever]
         public List<CourseCompetence> Competences { get; set; }
-
-        [ValidateNever]
         public List<CoursePrerequisite> Prerequisites { get; set; }
+        public int Year { get; set; }
+        public int Semester { get; set; }
     }
 }

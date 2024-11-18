@@ -1,5 +1,6 @@
-﻿@using AcademicDisciplinesGA.GA
-@model IEnumerable<AcademicDisciplinesGA.Models.Course>
+﻿@using AcademicDisciplinesGA.Areas.User.Models
+@using AcademicDisciplinesGA.GA
+@model IEnumerable<AcademicDisciplinesGA.Areas.User.Models.CourseVM>
 
 <div class="container p-3">
     <div class="row pt-4">
@@ -18,10 +19,12 @@
                 <th>Teacher</th>
                 <th>Prerequisite</th>
                 <th>Competencies</th>
+                <th>Year</th>
+                <th>Semester</th>
             </tr>
         </thead>
         <tbody>
-            @if (ViewData["Courses"] is List<Course> chromosome)
+            @if (ViewData["Courses"] is List<CourseVM> chromosome)
             {
                 @foreach (var item in chromosome)
                 {
@@ -50,6 +53,12 @@
                         </td>
                         <td>
                             @string.Join(", ", item.Competences.Select(c => c.Competence.Name))
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Year)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Semester)
                         </td>
                     </tr>
                 }

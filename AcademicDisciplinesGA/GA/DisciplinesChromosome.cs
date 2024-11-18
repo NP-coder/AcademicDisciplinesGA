@@ -1,6 +1,4 @@
-﻿using AcademicDisciplinesGA.Areas.Admin.Models;
-using AcademicDisciplinesGA.Models;
-using GeneticSharp;
+﻿using AcademicDisciplinesGA.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace AcademicDisciplinesGA.GA
@@ -21,30 +19,10 @@ namespace AcademicDisciplinesGA.GA
 
         public static int _length = 10;
 
+        public static int ECTSKap = 50;
+
         static readonly Random Random = new Random();
 
-        public DisciplinesChromosome(ApplicationDbContext dataContext, List<Teacher> teachers, List<Chair> chairs)
-        {
-            _dataContext = dataContext;
-            Generate();
-            Teachers = teachers;
-            Chairs = chairs;
-            ECTSCount = GetTotalECTS();
-            TeacherFitness = IsTeacherSelected(Teachers);
-            ChairFitness = IsChairSelected(Chairs);
-        }
-
-        public DisciplinesChromosome(List<CourseChromosome> courses, List<Teacher> teachers, List<Chair> chairs)
-        {
-            Sequence = courses.ToList();
-            Teachers = teachers;
-            Chairs = chairs;
-            ECTSCount = GetTotalECTS();
-            TeacherFitness = IsTeacherSelected(Teachers);
-            ChairFitness = IsChairSelected(Chairs);
-        }
-
-        // є можливість що в популяцію непопаде дисципліна що є пррериквізитом
         public DisciplinesChromosome(ApplicationDbContext dataContext, List<Competence> studentInterests)
         {
             _dataContext = dataContext;
@@ -67,36 +45,6 @@ namespace AcademicDisciplinesGA.GA
             AllocateCoursesWithPrerequisites();
             LoadFitness = CalculateLoadDistribution();
             ECTSCount = GetTotalECTS();
-            CompetenceFitness = CalculateCompetenceFitness();
-        }
-
-        public void RecalculateCompetenceFitness()
-        {
-            var allCourses = _dataContext.Courses
-                .Include(course => course.Competences)
-                .ThenInclude(cc => cc.Competence)
-                .ToList();
-
-            for (int i = 0; i < Sequence.Count; i++)
-            {
-                var updatedCourse = allCourses.Find(c => c.Id == Sequence[i].Id);
-                if (updatedCourse != null)
-                {
-                    var newCourse = new CourseChromosome()
-                    {
-                        Id = updatedCourse.Id,
-                        Title = updatedCourse.Title,
-                        ECTS = updatedCourse.ECTS,
-                        ChairId = updatedCourse.ChairId,
-                        TeacherId = updatedCourse.TeacherId,
-                        RequiredCompetences = updatedCourse.Competences.Select(cc => cc.Competence).ToList(),
-                        Prerequisites = updatedCourse.Prerequisites.Select(p => p.PrerequisiteId).ToList()
-                    };
-
-                    Sequence[i] = newCourse;
-                }
-            }
-
             CompetenceFitness = CalculateCompetenceFitness();
         }
 
@@ -133,13 +81,86 @@ namespace AcademicDisciplinesGA.GA
             return -loadVariancePenalty; // Мінус означає штраф за велике відхилення від ідеального розподілу
         }
 
+        //public void AllocateCoursesWithPrerequisites()
+        //{
+        //    var graph = new Dictionary<int, List<int>>();
+        //    var inDegree = new Dictionary<int, int>();
+        //    var courseIndexMap = new Dictionary<int, int>();
+
+        //    // Initialize graph structure and inDegree map
+        //    for (int index = 0; index < Sequence.Count; index++)
+        //    {
+        //        var course = Sequence[index];
+        //        courseIndexMap[course.Id] = index;
+
+        //        if (!graph.ContainsKey(course.Id))
+        //        {
+        //            graph[course.Id] = new List<int>();
+        //            inDegree[course.Id] = 0;
+        //        }
+
+        //        foreach (var prereq in course.Prerequisites)
+        //        {
+        //            if (!graph.ContainsKey(prereq))
+        //            {
+        //                graph[prereq] = new List<int>();
+        //                inDegree[prereq] = 0;
+        //            }
+        //            graph[prereq].Add(course.Id);
+        //            inDegree[course.Id]++;
+        //        }
+        //    }
+
+        //    var queue = new Queue<int>();
+        //    foreach (var key in inDegree)
+        //    {
+        //        if (key.Value == 0)
+        //            queue.Enqueue(key.Key);
+        //    }
+
+        //    int semester = 1, year = 1;
+        //    while (queue.Count > 0)
+        //    {
+        //        int size = queue.Count;
+        //        for (int i = 0; i < size; i++)
+        //        {
+        //            var courseId = queue.Dequeue();
+        //            var courseIndex = courseIndexMap[courseId];
+        //            var course = Sequence[courseIndex];
+
+        //            course.Year = year;
+        //            course.Semester = semester;
+        //            Sequence[courseIndex] = course;
+
+        //            foreach (var neighbor in graph[courseId])
+        //            {
+        //                inDegree[neighbor]--;
+        //                if (inDegree[neighbor] == 0)
+        //                    queue.Enqueue(neighbor);
+        //            }
+        //        }
+
+        //        semester++;
+        //        if (semester > 2)
+        //        {
+        //            semester = 1;
+        //            year++;
+        //        }
+        //    }
+        //}
+
         public void AllocateCoursesWithPrerequisites()
         {
             var graph = new Dictionary<int, List<int>>();
             var inDegree = new Dictionary<int, int>();
             var courseIndexMap = new Dictionary<int, int>();
+            var semesterCredits = new Dictionary<int, int>();
 
-            // Initialize graph structure and inDegree map
+            // Визначаємо ідеальну кількість ECTS на семестр
+            int totalECTS = Sequence.Sum(course => course.ECTS);
+            int idealECTSPerSemester = totalECTS / 8;
+
+            // Ініціалізація структур для графа та семестрів
             for (int index = 0; index < Sequence.Count; index++)
             {
                 var course = Sequence[index];
@@ -163,27 +184,43 @@ namespace AcademicDisciplinesGA.GA
                 }
             }
 
-            var queue = new Queue<int>();
-            foreach (var key in inDegree)
+            for (int i = 1; i <= 8; i++) // Приготування словаря для відстеження ECTS по семестру
             {
-                if (key.Value == 0)
-                    queue.Enqueue(key.Key);
+                semesterCredits[i] = 0;
             }
 
-            int semester = 1, year = 1;
+            var queue = new Queue<int>();
+            foreach (var item in inDegree)
+            {
+                if (item.Value == 0)
+                    queue.Enqueue(item.Key);
+            }
+
+            int semester = 1;
             while (queue.Count > 0)
             {
                 int size = queue.Count;
                 for (int i = 0; i < size; i++)
                 {
                     var courseId = queue.Dequeue();
-                    var courseIndex = courseIndexMap[courseId];
-                    var course = Sequence[courseIndex];
+                    var course = Sequence[courseIndexMap[courseId]];
 
-                    course.Year = year;
-                    course.Semester = semester;
-                    Sequence[courseIndex] = course;
+                    // Знайти підходящий семестр для розміщення курсу
+                    while (semesterCredits[semester] + course.ECTS > idealECTSPerSemester + 5 && semester <= 8)
+                    {
+                        semester++;
+                    }
 
+                    if (semester <= 8)
+                    {
+                        // Встановлення року та семестру виходячи з номеру семестру
+                        course.Year = (semester - 1) / 2 + 1;
+                        course.Semester = (semester % 2 == 0) ? 2 : 1;
+                        semesterCredits[semester] += course.ECTS;
+                        Sequence[courseIndexMap[courseId]] = course;
+                    }
+
+                    // Зменшення ступенів вхідності наступників
                     foreach (var neighbor in graph[courseId])
                     {
                         inDegree[neighbor]--;
@@ -192,11 +229,10 @@ namespace AcademicDisciplinesGA.GA
                     }
                 }
 
-                semester++;
-                if (semester > 2)
+                // Реалокація весів залишків на наступний семестр, якщо nuстигли до кінця
+                if (semester > 8)
                 {
-                    semester = 1;
-                    year++;
+                    break; // Ми закінчили всі можливі семестри
                 }
             }
         }
@@ -249,21 +285,20 @@ namespace AcademicDisciplinesGA.GA
         }
 
         // додати в сек обовязкові курси
-        // перевірка на ектс???
-        public void AddCourseWithPrerequisites(Course course, HashSet<int> selectedCoursesIds, List<CourseChromosome> result)
+        public int AddCourseWithPrerequisites(Course course, HashSet<int> selectedCoursesIds, List<CourseChromosome> result)
         {
             if (selectedCoursesIds.Contains(course.Id))
-                return;
+                return 0;
 
-            // Спочатку додаємо пререквізити
+            int totalECTS = 0;
+
             foreach (var prerequisite in course.Prerequisites)
             {
                 Course prereqCourse = _dataContext.Courses.Find(prerequisite.PrerequisiteId);
                 if (prereqCourse != null)
-                    AddCourseWithPrerequisites(prereqCourse, selectedCoursesIds, result);
+                    totalECTS += AddCourseWithPrerequisites(prereqCourse, selectedCoursesIds, result);
             }
 
-            // Додаємо себе
             selectedCoursesIds.Add(course.Id);
             result.Add(new CourseChromosome
             {
@@ -275,6 +310,8 @@ namespace AcademicDisciplinesGA.GA
                 RequiredCompetences = course.Competences.Select(cc => cc.Competence).ToList(),
                 Prerequisites = course.Prerequisites.Select(p => p.PrerequisiteId).ToList()
             });
+
+            return totalECTS + course.ECTS;
         }
 
         public void Generate()
@@ -288,17 +325,43 @@ namespace AcademicDisciplinesGA.GA
 
             var selectedCoursesIds = new HashSet<int>();
             var result = new List<CourseChromosome>();
+            int currentECTS = 0;
+            HashSet<int> triedIndices = new HashSet<int>();
 
-            while (result.Count < _length)
+            // Обробка обов'язкових курсів
+            //var mandatoryCourses = allCourses.Where(c => c.Competences.Any(cc => cc.Competence.IsMandatory)).ToList();
+            //foreach (var mandatoryCourse in mandatoryCourses)
+            //{
+            //    if (!selectedCoursesIds.Contains(mandatoryCourse.Id) && (currentECTS + mandatoryCourse.ECTS <= ECTSKap))
+            //    {
+            //        AddCourseWithPrerequisites(mandatoryCourse, selectedCoursesIds, result);
+            //        currentECTS += mandatoryCourse.ECTS;
+            //    }
+            //}
+
+            while (currentECTS < ECTSKap && triedIndices.Count < allCourses.Count)
             {
                 int index = Random.Next(0, allCourses.Count);
+                if (!triedIndices.Add(index))
+                {
+                    continue;
+                }
+
                 Course selectedCourse = allCourses[index];
-
-                AddCourseWithPrerequisites(selectedCourse, selectedCoursesIds, result);
-
-                // Обмеження за кількістю курсів
-                if (result.Count >= _length)
-                    break;
+                if (!selectedCoursesIds.Contains(selectedCourse.Id))
+                {
+                    int possibleECTS = AddCourseWithPrerequisites(selectedCourse, selectedCoursesIds, result);
+                    if (currentECTS + possibleECTS <= ECTSKap)
+                    {
+                        currentECTS += possibleECTS;
+                    }
+                    else
+                    {
+                        result.RemoveAll(c => c.Id == selectedCourse.Id);
+                        selectedCoursesIds.Remove(selectedCourse.Id);
+                        break;
+                    }
+                }
             }
 
             Sequence = result;

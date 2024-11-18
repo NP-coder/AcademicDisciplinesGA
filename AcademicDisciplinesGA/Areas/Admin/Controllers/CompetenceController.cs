@@ -16,14 +16,12 @@ namespace AcademicDisciplinesGA.Areas.Admin.Controllers
             _context = context;
         }
 
-        // GET: Competence
         public IActionResult Index()
         {
             var competences = _context.Competences.ToList();
             return View(competences);
         }
 
-        // GET: Competence/Upsert/5
         public IActionResult Upsert(int? id)
         {
             CompetenceVM competenceVM = new CompetenceVM()
@@ -37,7 +35,6 @@ namespace AcademicDisciplinesGA.Areas.Admin.Controllers
             }
             else
             {
-                // edit existing competence
                 competenceVM.Competence = _context.Competences.FirstOrDefault(x => x.Id == id);
                 if (competenceVM.Competence == null)
                 {
@@ -47,7 +44,6 @@ namespace AcademicDisciplinesGA.Areas.Admin.Controllers
             }
         }
 
-        // POST: Competence/Upsert
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Upsert(CompetenceVM competenceVM)
@@ -68,7 +64,6 @@ namespace AcademicDisciplinesGA.Areas.Admin.Controllers
             return View(competenceVM);
         }
 
-        // GET: Competence/Delete/5
         public IActionResult Delete(int? id)
         {
             if (id == null)

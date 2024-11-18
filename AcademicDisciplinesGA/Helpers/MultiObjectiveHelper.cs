@@ -8,8 +8,6 @@ namespace AcademicDisciplinesGA.Helpers
         {
             foreach (var individual in population)
             {
-                //individual.RecalculateCompetenceFitness(); // Запуск оновлення фітнесу за компетентностями
-                //individual.LoadFitness = individual.CalculateLoadDistribution();
                 individual.Rank = -1;
             }
             CalculateRank(population);
@@ -74,11 +72,29 @@ namespace AcademicDisciplinesGA.Helpers
 
         public static bool Dominates(DisciplinesChromosome a, DisciplinesChromosome b)
         {
-            bool betterOrEqualOnAll = a.TeacherFitness >= b.TeacherFitness && a.ChairFitness >= b.ChairFitness && a.CompetenceFitness >= b.CompetenceFitness && a.LoadFitness >= b.LoadFitness;
-            bool betterOnAtLeastOne = a.TeacherFitness > b.TeacherFitness || a.ChairFitness > b.ChairFitness || a.CompetenceFitness > b.CompetenceFitness || a.LoadFitness > b.LoadFitness;
+            int ECTSKap = 50;
+            bool withinECTSCapA = a.ECTSCount <= ECTSKap;
+            bool withinECTSCapB = b.ECTSCount <= ECTSKap;
+
+            if (!withinECTSCapA && !withinECTSCapB) return false;
+
+            bool betterOrEqualOnAll =
+                a.TeacherFitness >= b.TeacherFitness &&
+                a.ChairFitness >= b.ChairFitness &&
+                a.CompetenceFitness >= b.CompetenceFitness &&
+                a.LoadFitness >= b.LoadFitness &&
+                withinECTSCapA && !withinECTSCapB;
+
+            bool betterOnAtLeastOne =
+                a.TeacherFitness > b.TeacherFitness ||
+                a.ChairFitness > b.ChairFitness ||
+                a.CompetenceFitness > b.CompetenceFitness ||
+                a.LoadFitness > b.LoadFitness ||
+                (withinECTSCapA && !withinECTSCapB);
 
             return betterOrEqualOnAll && betterOnAtLeastOne;
         }
+
 
         internal static float CalculateArea(IOrderedEnumerable<DisciplinesChromosome> firstRank)
         {
